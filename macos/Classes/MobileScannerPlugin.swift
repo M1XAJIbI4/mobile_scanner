@@ -32,7 +32,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
 
     var symbologies:[VNBarcodeSymbology] = []
     
-    //    var analyzeMode: Int = 0
     var analyzing: Bool = false
     var position = AVCaptureDevice.Position.back
     
@@ -65,8 +64,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
             setScale(call, result)
         case "resetScale":
             resetScale(call, result)
-            //        case "analyze":
-            //            switchAnalyzeMode(call, result)
         case "stop":
             stop(result)
         case "updateScanWindow":
@@ -106,7 +103,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
             return
         }
         guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-            print("Failed to get image buffer from sample buffer.")
             return
         }
         latestBuffer = imageBuffer
@@ -148,11 +144,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
                                             ],
                                         ])
                                     }
-                                    //                                   if barcodeType == "QR" {
-                                    //                                        let image = CIImage(image: source)
-                                    //                                        image?.cropping(to: barcode.boundingBox)
-                                    //                                        self.qrCodeDescriptor(qrCode: barcode, qrCodeImage: image!)
-                                    //                                    }
                                 }
                             }
                         } else {
@@ -162,7 +153,7 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
                         }
                     })
                     if(self?.symbologies.isEmpty == false){
-                        // add the symbologies the user wishes to support
+                        // Add the requested symbologies.
                         barcodeRequest.symbologies = self!.symbologies
                     }
                     try imageRequestHandler.perform([barcodeRequest])
@@ -259,7 +250,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
 
         let argReader = MapArgumentReader(call.arguments as? [String: Any])
 
-        // let ratio: Int = argReader.int(key: "ratio")
         let torch:Bool = argReader.bool(key: "torch") ?? false
         let facing:Int = argReader.int(key: "facing") ?? 1
         let speed:Int = argReader.int(key: "speed") ?? 0
@@ -312,7 +302,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
         videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue.main)
         captureSession!.addOutput(videoOutput)
         for connection in videoOutput.connections {
-            // connection.videoOrientation = .portrait
             if position == .front && connection.isVideoMirroringSupported {
                 connection.isVideoMirrored = true
             }
@@ -415,11 +404,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
         result(nil)
     }
 
-    //    func switchAnalyzeMode(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-    //        analyzeMode = call.arguments as! Int
-    //        result(nil)
-    //    }
-
     func stop(_ result: FlutterResult) {
         if (device == nil || captureSession == nil) {
             result(nil)
@@ -436,7 +420,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
         device.removeObserver(self, forKeyPath: #keyPath(AVCaptureDevice.torchMode))
         registry.unregisterTexture(textureId)
         
-        //        analyzeMode = 0
         latestBuffer = nil
         captureSession = nil
         device = nil
@@ -539,7 +522,7 @@ extension VNBarcodeSymbology {
         }
     }
 
-    var toInt:Int? {
+    var toInt: Int? {
         if #available(macOS 12.0, *) {
             if(self == VNBarcodeSymbology.codabar){
                 return 8
