@@ -18,7 +18,7 @@ class BarcodeCapture {
 
   /// The bytes of the image that is embedded in the barcode.
   ///
-  /// This null if [MobileScannerController.returnImage] is false,
+  /// This is null if [MobileScannerController.returnImage] is false,
   /// or if there is no available image.
   final Uint8List? image;
 
