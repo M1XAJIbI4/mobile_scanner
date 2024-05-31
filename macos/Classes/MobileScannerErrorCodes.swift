@@ -14,7 +14,6 @@ struct MobileScannerErrorCodes {
     // because it uses the error message from the undelying error.
     static let BARCODE_ERROR = "MOBILE_SCANNER_BARCODE_ERROR"
     static let CAMERA_ERROR = "MOBILE_SCANNER_CAMERA_ERROR"
-    static let CAMERA_ERROR_MESSAGE = "An error occurred when opening the camera."
     static let NO_CAMERA_ERROR = "MOBILE_SCANNER_NO_CAMERA_ERROR"
     static let NO_CAMERA_ERROR_MESSAGE = "No cameras available."
 }
