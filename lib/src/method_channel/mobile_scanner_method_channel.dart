@@ -197,14 +197,37 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
 
     Map<String, Object?>? startResult;
 
+    MobileScannerErrorCode errorCode = MobileScannerErrorCode.genericError;
+
     try {
       startResult = await methodChannel.invokeMapMethod<String, Object?>(
         'start',
         startOptions.toMap(),
       );
     } on PlatformException catch (error) {
+      // Map the error code to a MobileScannerErrorCode.
+      // The error code strings should be kept in sync with their native counterparts.
+      // Any error code that is not mapped will be treated as a generic error.
+      switch (error.code) {
+        // In case the scanner was already started, report the right error code.
+        // If the scanner is already starting,
+        // this error code is a signal to the controller to just ignore the attempt.
+        case 'MOBILE_SCANNER_ALREADY_STARTED_ERROR':
+          errorCode = MobileScannerErrorCode.controllerAlreadyInitialized;
+        // In case no cameras are available, using the scanner is not supported.
+        case 'MOBILE_SCANNER_NO_CAMERA_ERROR':
+          errorCode = MobileScannerErrorCode.unsupported;
+        // This error code should have already been handled
+        // by the _requestCameraPermission method above,
+        // but just in case, also handle it here.
+        case 'MOBILE_SCANNER_CAMERA_PERMISSION_DENIED':
+          errorCode = MobileScannerErrorCode.permissionDenied;
+        default:
+          break;
+      }
+
       throw MobileScannerException(
-        errorCode: MobileScannerErrorCode.genericError,
+        errorCode: errorCode,
         errorDetails: MobileScannerErrorDetails(
           code: error.code,
           details: error.details as Object?,
