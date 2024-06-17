@@ -5,7 +5,7 @@ class MobileScannerErrorCodes {
         const val ALREADY_STARTED_ERROR = "MOBILE_SCANNER_ALREADY_STARTED_ERROR"
         const val ALREADY_STARTED_ERROR_MESSAGE = "The scanner was already started."
         // The error code 'BARCODE_ERROR' does not have an error message,
-        // because it uses the error message from the undelying error.
+        // because it uses the error message from the underlying error.
         const val BARCODE_ERROR = "MOBILE_SCANNER_BARCODE_ERROR"
         // The error code 'CAMERA_ACCESS_DENIED' does not have an error message,
         // because it is used for a boolean result.
