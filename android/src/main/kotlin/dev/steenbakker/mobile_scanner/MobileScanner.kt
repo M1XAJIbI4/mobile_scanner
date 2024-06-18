@@ -90,55 +90,45 @@ class MobileScanner(
                 val barcodeMap: MutableList<Map<String, Any?>> = mutableListOf()
 
                 for (barcode in barcodes) {
-                    if (scanWindow != null) {
-                        val match = isBarcodeInScanWindow(scanWindow!!, barcode, imageProxy)
-                        if (!match) {
-                            continue
-                        } else {
-                            barcodeMap.add(barcode.data)
-                        }
-                    } else {
+                    if (scanWindow == null) {
+                        barcodeMap.add(barcode.data)
+                        continue
+                    }
+
+                    if (isBarcodeInScanWindow(scanWindow!!, barcode, imageProxy)) {
                         barcodeMap.add(barcode.data)
                     }
                 }
 
-
-                if (barcodeMap.isNotEmpty()) {
-                    if (returnImage) {
-
-                        val bitmap = Bitmap.createBitmap(mediaImage.width, mediaImage.height, Bitmap.Config.ARGB_8888)
-
-                        val imageFormat = YuvToRgbConverter(activity.applicationContext)
-
-                        imageFormat.yuvToRgb(mediaImage, bitmap)
-
-                        val bmResult = rotateBitmap(bitmap, camera?.cameraInfo?.sensorRotationDegrees?.toFloat() ?: 90f)
-
-                        val stream = ByteArrayOutputStream()
-                        bmResult.compress(Bitmap.CompressFormat.PNG, 100, stream)
-                        val byteArray = stream.toByteArray()
-                        val bmWidth = bmResult.width
-                        val bmHeight = bmResult.height
-                        bmResult.recycle()
-
-
-                        mobileScannerCallback(
-                            barcodeMap,
-                            byteArray,
-                            bmWidth,
-                            bmHeight
-                        )
-
-                    } else {
-
-                        mobileScannerCallback(
-                            barcodeMap,
-                            null,
-                            null,
-                            null
-                        )
-                    }
+                if (barcodeMap.isEmpty()) {
+                    return@addOnSuccessListener
                 }
+
+                if (!returnImage) {
+                    mobileScannerCallback(barcodeMap, null, null, null)
+                    return@addOnSuccessListener
+                }
+
+                val bitmap = Bitmap.createBitmap(mediaImage.width, mediaImage.height, Bitmap.Config.ARGB_8888)
+                val imageFormat = YuvToRgbConverter(activity.applicationContext)
+
+                imageFormat.yuvToRgb(mediaImage, bitmap)
+
+                val bmResult = rotateBitmap(bitmap, camera?.cameraInfo?.sensorRotationDegrees?.toFloat() ?: 90f)   
+
+                val stream = ByteArrayOutputStream()
+                bmResult.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                val byteArray = stream.toByteArray()
+                val bmWidth = bmResult.width
+                val bmHeight = bmResult.height
+                bmResult.recycle()
+
+                mobileScannerCallback(
+                    barcodeMap,
+                    byteArray,
+                    bmWidth,
+                    bmHeight
+                )
             }
             .addOnFailureListener { e ->
                 mobileScannerErrorCallback(
