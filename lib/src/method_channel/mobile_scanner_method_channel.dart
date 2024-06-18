@@ -173,13 +173,21 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
 
   @override
   Future<BarcodeCapture?> analyzeImage(String path) async {
-    final Map<String, Object?>? result =
-        await methodChannel.invokeMapMethod<String, Object?>(
-      'analyzeImage',
-      path,
-    );
+    try {
+      final Map<String, Object?>? result =
+          await methodChannel.invokeMapMethod<String, Object?>(
+        'analyzeImage',
+        path,
+      );
 
-    return _parseBarcode(result);
+      return _parseBarcode(result);
+    } on PlatformException catch (exception) {
+      if (exception.code == kBarcodeErrorEventName) {
+        throw MobileScannerBarcodeException(exception.message);
+      }
+
+      rethrow;
+    }
   }
 
   @override

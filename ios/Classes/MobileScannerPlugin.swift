@@ -272,7 +272,7 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin {
         mobileScanner.analyzeImage(image: uiImage!, position: AVCaptureDevice.Position.back, callback: { barcodes, error in
             if error != nil {
                 DispatchQueue.main.async {
-                    result(FlutterError(code: MobileScannerErrorCodes.GENERIC_ERROR,
+                    result(FlutterError(code: MobileScannerErrorCodes.BARCODE_ERROR,
                                         message: error?.localizedDescription,
                                         details: nil))
                 }
