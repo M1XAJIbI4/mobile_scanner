@@ -2,6 +2,9 @@
 * [Android] Fixed a bug that prevented `useNewCameraSelector` from being used correctly. (thanks @bswhite1!)
 * Fixed a bug that would cause the scanner to emit an error when it was already started. Now it ignores any calls to start while it is starting.
 * Updated the scanner to report any scanning errors that were encountered during processing.
+* Introduced a new getter `hasCameraPermission` for the `MobileScannerState`.
+* Fixed a bug in the lifecycle handling sample. Now instead of checking `isInitialized`,
+the sample recommends using `hasCameraPermission`, which also guards against camera permission errors.
 
 ## 5.1.1
 * This release fixes an issue with automatic starts in the examples.
