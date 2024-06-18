@@ -282,17 +282,13 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
       startResult['currentTorchState'] as int? ?? -1,
     );
 
-    final Map<Object?, Object?>? sizeInfo =
-        startResult['size'] as Map<Object?, Object?>?;
-    final double? width = sizeInfo?['width'] as double?;
-    final double? height = sizeInfo?['height'] as double?;
-
     final Size size;
 
-    if (width == null || height == null) {
-      size = Size.zero;
-    } else {
+    if (startResult['size']
+        case {'width': final double width, 'height': final double height}) {
       size = Size(width, height);
+    } else {
+      size = Size.zero;
     }
 
     return MobileScannerViewAttributes(
