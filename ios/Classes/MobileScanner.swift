@@ -25,9 +25,6 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     /// Barcode scanner for results
     var scanner = BarcodeScanner.barcodeScanner()
 
-    /// Return image buffer with the Barcode event
-    var returnImage: Bool = false
-
     /// Default position of camera
     var videoPosition: AVCaptureDevice.Position = AVCaptureDevice.Position.back
 
@@ -127,7 +124,6 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     /// Gets called when a new image is added to the buffer
     public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-            print("Failed to get image buffer from sample buffer.")
             return
         }
         latestBuffer = imageBuffer
@@ -171,7 +167,7 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     }
 
     /// Start scanning for barcodes
-    func start(barcodeScannerOptions: BarcodeScannerOptions?, returnImage: Bool, cameraPosition: AVCaptureDevice.Position, torch: Bool, detectionSpeed: DetectionSpeed, completion: @escaping (MobileScannerStartParameters) -> ()) throws {
+    func start(barcodeScannerOptions: BarcodeScannerOptions?, cameraPosition: AVCaptureDevice.Position, torch: Bool, detectionSpeed: DetectionSpeed, completion: @escaping (MobileScannerStartParameters) -> ()) throws {
         self.detectionSpeed = detectionSpeed
         if (device != nil || captureSession != nil) {
             throw MobileScannerError.alreadyStarted

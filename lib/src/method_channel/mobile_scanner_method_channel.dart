@@ -16,6 +16,10 @@ import 'package:mobile_scanner/src/objects/start_options.dart';
 
 /// An implementation of [MobileScannerPlatform] that uses method channels.
 class MethodChannelMobileScanner extends MobileScannerPlatform {
+  /// The name of the error event that is sent when a barcode scan error occurs.
+  @visibleForTesting
+  static const String kBarcodeErrorEventName = 'MOBILE_SCANNER_BARCODE_ERROR';
+
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel(
@@ -40,9 +44,20 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
   int? _textureId;
 
   /// Parse a [BarcodeCapture] from the given [event].
+  ///
+  /// If the event name is [kBarcodeErrorEventName],
+  /// a [MobileScannerBarcodeException] is thrown.
   BarcodeCapture? _parseBarcode(Map<Object?, Object?>? event) {
     if (event == null) {
       return null;
+    }
+
+    if (event
+        case {
+          'name': kBarcodeErrorEventName,
+          'data': final String? errorDescription
+        }) {
+      throw MobileScannerBarcodeException(errorDescription);
     }
 
     final Object? data = event['data'];
@@ -133,9 +148,13 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
 
   @override
   Stream<BarcodeCapture?> get barcodesStream {
-    return eventsStream
-        .where((event) => event['name'] == 'barcode')
-        .map((event) => _parseBarcode(event));
+    // Handle both incoming barcode events and barcode error events.
+    return eventsStream.where(
+      (event) {
+        return event['name'] == 'barcode' ||
+            event['name'] == kBarcodeErrorEventName;
+      },
+    ).map((event) => _parseBarcode(event));
   }
 
   @override
@@ -154,13 +173,21 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
 
   @override
   Future<BarcodeCapture?> analyzeImage(String path) async {
-    final Map<String, Object?>? result =
-        await methodChannel.invokeMapMethod<String, Object?>(
-      'analyzeImage',
-      path,
-    );
+    try {
+      final Map<String, Object?>? result =
+          await methodChannel.invokeMapMethod<String, Object?>(
+        'analyzeImage',
+        path,
+      );
 
-    return _parseBarcode(result);
+      return _parseBarcode(result);
+    } on PlatformException catch (exception) {
+      if (exception.code == kBarcodeErrorEventName) {
+        throw MobileScannerBarcodeException(exception.message);
+      }
+
+      rethrow;
+    }
   }
 
   @override
@@ -188,8 +215,7 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
       throw const MobileScannerException(
         errorCode: MobileScannerErrorCode.controllerAlreadyInitialized,
         errorDetails: MobileScannerErrorDetails(
-          message:
-              'The scanner was already started. Call stop() before calling start() again.',
+          message: 'The scanner was already started.',
         ),
       );
     }
@@ -198,14 +224,37 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
 
     Map<String, Object?>? startResult;
 
+    MobileScannerErrorCode errorCode = MobileScannerErrorCode.genericError;
+
     try {
       startResult = await methodChannel.invokeMapMethod<String, Object?>(
         'start',
         startOptions.toMap(),
       );
     } on PlatformException catch (error) {
+      // Map the error code to a MobileScannerErrorCode.
+      // The error code strings should be kept in sync with their native counterparts.
+      // Any error code that is not mapped will be treated as a generic error.
+      switch (error.code) {
+        // In case the scanner was already started, report the right error code.
+        // If the scanner is already starting,
+        // this error code is a signal to the controller to just ignore the attempt.
+        case 'MOBILE_SCANNER_ALREADY_STARTED_ERROR':
+          errorCode = MobileScannerErrorCode.controllerAlreadyInitialized;
+        // In case no cameras are available, using the scanner is not supported.
+        case 'MOBILE_SCANNER_NO_CAMERA_ERROR':
+          errorCode = MobileScannerErrorCode.unsupported;
+        // This error code should have already been handled
+        // by the _requestCameraPermission method above,
+        // but just in case, also handle it here.
+        case 'MOBILE_SCANNER_CAMERA_PERMISSION_DENIED':
+          errorCode = MobileScannerErrorCode.permissionDenied;
+        default:
+          break;
+      }
+
       throw MobileScannerException(
-        errorCode: MobileScannerErrorCode.genericError,
+        errorCode: errorCode,
         errorDetails: MobileScannerErrorDetails(
           code: error.code,
           details: error.details as Object?,
@@ -241,17 +290,13 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
       startResult['currentTorchState'] as int? ?? -1,
     );
 
-    final Map<Object?, Object?>? sizeInfo =
-        startResult['size'] as Map<Object?, Object?>?;
-    final double? width = sizeInfo?['width'] as double?;
-    final double? height = sizeInfo?['height'] as double?;
-
     final Size size;
 
-    if (width == null || height == null) {
-      size = Size.zero;
-    } else {
+    if (startResult['size']
+        case {'width': final double width, 'height': final double height}) {
       size = Size(width, height);
+    } else {
+      size = Size.zero;
     }
 
     return MobileScannerViewAttributes(

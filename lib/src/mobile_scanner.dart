@@ -35,6 +35,12 @@ class MobileScanner extends StatefulWidget {
 
   /// The function that signals when new codes were detected by the [controller].
   /// If null, use the controller.barcodes stream directly to capture barcodes.
+  ///
+  /// This method does not receive any [MobileScannerBarcodeException]s
+  /// that are emitted by the scanner.
+  ///
+  /// To handle both [BarcodeCapture]s and [MobileScannerBarcodeException]s,
+  /// use the [MobileScannerController.barcodes] stream directly.
   final void Function(BarcodeCapture barcodes)? onDetect;
 
   /// The error builder for the camera preview.
@@ -281,8 +287,7 @@ class _MobileScannerState extends State<MobileScanner>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (widget.controller != null) return;
-    if (!controller.value.isInitialized) {
+    if (widget.controller != null || !controller.value.hasCameraPermission) {
       return;
     }
 

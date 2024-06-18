@@ -32,7 +32,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
 
     var symbologies:[VNBarcodeSymbology] = []
     
-    //    var analyzeMode: Int = 0
     var analyzing: Bool = false
     var position = AVCaptureDevice.Position.back
     
@@ -65,8 +64,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
             setScale(call, result)
         case "resetScale":
             resetScale(call, result)
-            //        case "analyze":
-            //            switchAnalyzeMode(call, result)
         case "stop":
             stop(result)
         case "updateScanWindow":
@@ -106,7 +103,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
             return
         }
         guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-            print("Failed to get image buffer from sample buffer.")
             return
         }
         latestBuffer = imageBuffer
@@ -148,27 +144,28 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
                                             ],
                                         ])
                                     }
-                                    //                                   if barcodeType == "QR" {
-                                    //                                        let image = CIImage(image: source)
-                                    //                                        image?.cropping(to: barcode.boundingBox)
-                                    //                                        self.qrCodeDescriptor(qrCode: barcode, qrCodeImage: image!)
-                                    //                                    }
                                 }
                             }
                         } else {
                             DispatchQueue.main.async {
-                                self?.sink?(FlutterError(code: "MobileScanner", message: error?.localizedDescription, details: nil))
+                                self?.sink?([
+                                    "name": MobileScannerErrorCodes.BARCODE_ERROR,
+                                    "data": error?.localizedDescription,
+                                ])
                             }
                         }
                     })
                     if(self?.symbologies.isEmpty == false){
-                        // add the symbologies the user wishes to support
+                        // Add the requested symbologies.
                         barcodeRequest.symbologies = self!.symbologies
                     }
                     try imageRequestHandler.perform([barcodeRequest])
-                } catch let e {
+                } catch let error {
                     DispatchQueue.main.async {
-                        self?.sink?(FlutterError(code: "MobileScanner", message: e.localizedDescription, details: nil))
+                        self?.sink?([
+                            "name": MobileScannerErrorCodes.BARCODE_ERROR,
+                            "data": error.localizedDescription,
+                        ])
                     }
                 }
             }
@@ -248,8 +245,8 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
 
     func start(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         if (device != nil || captureSession != nil) {
-            result(FlutterError(code: "MobileScanner",
-                                message: "Called start() while already started!",
+            result(FlutterError(code: MobileScannerErrorCodes.ALREADY_STARTED_ERROR,
+                                message: MobileScannerErrorCodes.ALREADY_STARTED_ERROR_MESSAGE,
                                 details: nil))
             return
         }
@@ -259,7 +256,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
 
         let argReader = MapArgumentReader(call.arguments as? [String: Any])
 
-        // let ratio: Int = argReader.int(key: "ratio")
         let torch:Bool = argReader.bool(key: "torch") ?? false
         let facing:Int = argReader.int(key: "facing") ?? 1
         let speed:Int = argReader.int(key: "speed") ?? 0
@@ -280,8 +276,8 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
         }
         
         if (device == nil) {
-            result(FlutterError(code: "MobileScanner",
-                                message: "No camera found or failed to open camera!",
+            result(FlutterError(code: MobileScannerErrorCodes.NO_CAMERA_ERROR,
+                                message: MobileScannerErrorCodes.NO_CAMERA_ERROR_MESSAGE,
                                 details: nil))
             return
         }
@@ -299,7 +295,9 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
             let input = try AVCaptureDeviceInput(device: device)
             captureSession!.addInput(input)
         } catch {
-            result(FlutterError(code: "MobileScanner", message: error.localizedDescription, details: nil))
+            result(FlutterError(
+                code: MobileScannerErrorCodes.CAMERA_ERROR,
+                message: error.localizedDescription, details: nil))
             return
         }
         captureSession!.sessionPreset = AVCaptureSession.Preset.photo
@@ -312,7 +310,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
         videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue.main)
         captureSession!.addOutput(videoOutput)
         for connection in videoOutput.connections {
-            // connection.videoOrientation = .portrait
             if position == .front && connection.isVideoMirroringSupported {
                 connection.isVideoMirrored = true
             }
@@ -415,11 +412,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
         result(nil)
     }
 
-    //    func switchAnalyzeMode(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-    //        analyzeMode = call.arguments as! Int
-    //        result(nil)
-    //    }
-
     func stop(_ result: FlutterResult) {
         if (device == nil || captureSession == nil) {
             result(nil)
@@ -436,7 +428,6 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
         device.removeObserver(self, forKeyPath: #keyPath(AVCaptureDevice.torchMode))
         registry.unregisterTexture(textureId)
         
-        //        analyzeMode = 0
         latestBuffer = nil
         captureSession = nil
         device = nil
@@ -539,7 +530,7 @@ extension VNBarcodeSymbology {
         }
     }
 
-    var toInt:Int? {
+    var toInt: Int? {
         if #available(macOS 12.0, *) {
             if(self == VNBarcodeSymbology.codabar){
                 return 8
