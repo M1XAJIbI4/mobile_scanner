@@ -54,15 +54,15 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin {
             }
             
             let barcodesMap: [Any?] = barcodes!.compactMap { barcode in
-                if (MobileScannerPlugin.scanWindow != nil) {
-                    if (MobileScannerPlugin.isBarcodeInScanWindow(barcode: barcode, imageSize: image.size)) {
-                        return barcode.data
-                    } else {
-                        return nil
-                    }
-                } else {
+                if (MobileScannerPlugin.scanWindow == nil) {
                     return barcode.data
                 }
+
+                if (MobileScannerPlugin.isBarcodeInScanWindow(barcode: barcode, imageSize: image.size)) {
+                    return barcode.data
+                }
+
+                return nil
             }
             
             if (barcodesMap.isEmpty) {
