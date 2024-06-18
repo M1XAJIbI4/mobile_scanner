@@ -69,20 +69,21 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin {
                 return
             }
             
-            if (MobileScannerPlugin.returnImage) {
+            if (!MobileScannerPlugin.returnImage) {
                 barcodeHandler.publishEvent([
                     "name": "barcode",
                     "data": barcodesMap,
                 ])
-            } else {
-                barcodeHandler.publishEvent([
-                    "name": "barcode",
-                    "data": barcodesMap,
-                    "image": FlutterStandardTypedData(bytes: image.jpegData(compressionQuality: 0.8)!),
-                    "width": image.size.width,
-                    "height": image.size.height
-                ])
+                return
             }
+
+            barcodeHandler.publishEvent([
+                "name": "barcode",
+                "data": barcodesMap,
+                "image": FlutterStandardTypedData(bytes: image.jpegData(compressionQuality: 0.8)!),
+                "width": image.size.width,
+                "height": image.size.height
+            ])
         }, torchModeChangeCallback: { torchState in
             barcodeHandler.publishEvent(["name": "torchState", "data": torchState])
         }, zoomScaleChangeCallback: { zoomScale in
