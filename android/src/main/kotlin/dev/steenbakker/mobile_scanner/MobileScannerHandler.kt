@@ -273,9 +273,9 @@ class MobileScannerHandler(
 
     private fun toggleScanning(result: MethodChannel.Result) {
         try {
-            var isScanning = mobileScanner!!.toggeleScanning()
+            var isScanning = mobileScanner!!.toggleScanning()
             result.success(isScanning)
-        } catch (_) {
+        } catch (e: ToggleScanningStopped) {
             result.error("MobileScanner", "Called toggleScanning() while stopped!", null)
         }
     }
