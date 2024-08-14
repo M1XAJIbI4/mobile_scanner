@@ -17,11 +17,12 @@ class _BarcodeScannerWithControllerState
   BarcodeCapture? barcode;
 
   final MobileScannerController controller = MobileScannerController(
-    torchEnabled: true, useNewCameraSelector: true,
+    torchEnabled: true, 
+    useNewCameraSelector: true,
     // formats: [BarcodeFormat.qrCode]
     // facing: CameraFacing.front,
     // detectionSpeed: DetectionSpeed.normal
-    // detectionTimeoutMs: 1000,
+    detectionTimeoutMs: 200,
     // returnImage: false,
   );
 
@@ -85,6 +86,33 @@ class _BarcodeScannerWithControllerState
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
+                      ValueListenableBuilder<AnalyzingResume>(
+                        valueListenable: controller.analyzingResume, 
+                        builder: (_, analyzingResume, __) {
+                          final isAnalyzing = analyzingResume.index == 0;
+                          return AnimatedSwitcher(
+                            duration: const Duration(seconds: 1),
+                            child: ElevatedButton(
+                              key: ValueKey(analyzingResume.index == 0),
+                              onPressed: () {
+                                print('FOOBAR on controller tap');
+                                controller.toggleScanningResume();
+                              }, 
+                              child: Container(
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isAnalyzing ? Colors.green : Colors.red,
+                                ),
+                                width: 40,
+                                height: 40,
+                                child: const Text('A'),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
                       ValueListenableBuilder(
                         valueListenable: controller.hasTorchState,
                         builder: (context, state, child) {

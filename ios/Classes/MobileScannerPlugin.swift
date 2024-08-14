@@ -90,6 +90,8 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin {
             resetScale(call, result)
         case "updateScanWindow":
             updateScanWindow(call, result)
+        case "toggleScanning":
+            toggleScanning(call, result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -218,6 +220,12 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin {
         MobileScannerPlugin.scanWindow = scanWindowData
 
         result(nil)
+    }
+    
+    /// Toggle scanning
+    func toggleScanning(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+        let isAnalyzing = mobileScanner.toggleAnalyzing()
+        result(isAnalyzing)
     }
     
     static func arrayToRect(scanWindowData: [CGFloat]?) -> CGRect? {

@@ -60,6 +60,8 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
     private var imagesCurrentlyBeingProcessed = false
     
     public var timeoutSeconds: Double = 0
+    
+    private var isAnalyzingAllowed: Bool = true
 
     init(registry: FlutterTextureRegistry?, mobileScannerCallback: @escaping MobileScannerCallback, torchModeChangeCallback: @escaping TorchModeChangeCallback, zoomScaleChangeCallback: @escaping ZoomScaleChangeCallback) {
         self.registry = registry
@@ -134,7 +136,7 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
         registry?.textureFrameAvailable(textureId)
         
         let currentTime = Date().timeIntervalSince1970
-        let eligibleForScan = currentTime > nextScanTime && !imagesCurrentlyBeingProcessed
+        let eligibleForScan = currentTime > nextScanTime && !imagesCurrentlyBeingProcessed && isAnalyzingAllowed
         
         if ((detectionSpeed == DetectionSpeed.normal || detectionSpeed == DetectionSpeed.noDuplicates) && eligibleForScan || detectionSpeed == DetectionSpeed.unrestricted) {
 
@@ -456,6 +458,11 @@ public class MobileScanner: NSObject, AVCaptureVideoDataOutputSampleBufferDelega
         var height: Double = 0.0
         var hasTorch = false
         var textureId: Int64 = 0
+    }
+    
+    public func toggleAnalyzing() -> Bool {
+        isAnalyzingAllowed = !isAnalyzingAllowed
+        return isAnalyzingAllowed
     }
 }
 

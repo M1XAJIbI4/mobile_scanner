@@ -1,4 +1,5 @@
 export 'src/enums/address_type.dart';
+export 'src/enums/analyzyng_resume.dart';
 export 'src/enums/barcode_format.dart';
 export 'src/enums/barcode_type.dart';
 export 'src/enums/camera_facing.dart';

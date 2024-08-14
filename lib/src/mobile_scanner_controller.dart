@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile_scanner/src/enums/analyzyng_resume.dart';
 import 'package:mobile_scanner/src/enums/barcode_format.dart';
 import 'package:mobile_scanner/src/enums/camera_facing.dart';
 import 'package:mobile_scanner/src/enums/detection_speed.dart';
@@ -141,6 +142,9 @@ class MobileScannerController {
 
     return hasTorch;
   }
+
+  /// A notifier that provides an image analyzing resume
+  final ValueNotifier<AnalyzingResume> analyzingResume = ValueNotifier(AnalyzingResume.enabled);
 
   /// Set the starting arguments for the camera
   Map<String, dynamic> _argumentsToMap({CameraFacing? cameraFacingOverride}) {
@@ -408,6 +412,13 @@ class MobileScannerController {
   /// Reset the zoomScale of the camera to use standard scale 1x.
   Future<void> resetZoomScale() async {
     await _methodChannel.invokeMethod('resetScale');
+  }
+
+  /// Switching the frame analyzing on or off
+  Future<void> toggleScanningResume() async {
+    final nativeResponce = await _methodChannel.invokeMethod('toggleScanning');
+    final isAnalyzing = nativeResponce as bool? ?? true;
+    analyzingResume.value = isAnalyzing ? AnalyzingResume.enabled : AnalyzingResume.disabled;
   }
 
   /// Disposes the MobileScannerController and closes all listeners.
