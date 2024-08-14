@@ -124,6 +124,7 @@ class MobileScannerHandler(
             "setScale" -> setScale(call, result)
             "resetScale" -> resetScale(result)
             "updateScanWindow" -> updateScanWindow(call, result)
+            "toggleScanning" -> toggleScanning(result)
             else -> result.notImplemented()
         }
     }
@@ -268,5 +269,14 @@ class MobileScannerHandler(
         mobileScanner!!.scanWindow = call.argument<List<Float>?>("rect")
 
         result.success(null)
+    }
+
+    private fun toggleScanning(result: MethodChannel.Result) {
+        try {
+            var isScanning = mobileScanner!!.toggeleScanning()
+            result.success(isScanning)
+        } catch (_) {
+            result.error("MobileScanner", "Called toggleScanning() while stopped!", null)
+        }
     }
 }

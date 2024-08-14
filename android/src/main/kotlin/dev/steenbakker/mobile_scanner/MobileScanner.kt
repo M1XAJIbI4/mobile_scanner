@@ -59,6 +59,7 @@ class MobileScanner(
     private var detectionSpeed: DetectionSpeed = DetectionSpeed.NO_DUPLICATES
     private var detectionTimeout: Long = 250
     private var returnImage = false
+    private var isAnalyzingAllowed: Boolean = true
 
     /**
      * callback for the camera. Every frame is passed through this function.
@@ -67,7 +68,7 @@ class MobileScanner(
     val captureOutput = ImageAnalysis.Analyzer { imageProxy -> // YUV_420_888 format
         val mediaImage = imageProxy.image ?: return@Analyzer
         val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-
+        
         if (detectionSpeed == DetectionSpeed.NORMAL && scannerTimeout) {
             imageProxy.close()
             return@Analyzer
@@ -77,6 +78,10 @@ class MobileScanner(
 
         scanner.process(inputImage)
             .addOnSuccessListener { barcodes ->
+                if (!isAnalyzingAllowed) {
+                    return@addOnSuccessListener
+                }
+
                 if (detectionSpeed == DetectionSpeed.NO_DUPLICATES) {
                     val newScannedBarcodes = barcodes.mapNotNull({ barcode -> barcode.rawValue }).sorted()
                     if (newScannedBarcodes == lastScanned) {
@@ -459,6 +464,12 @@ class MobileScanner(
     fun resetScale() {
         if (camera == null) throw ZoomWhenStopped()
         camera?.cameraControl?.setZoomRatio(1f)
+    }
+
+    fun toggleScanning(): Boolean {
+        if (camera == null) throw NoCamera()
+        isAnalyzingAllowed = !isAnalyzingAllowed
+        return isAnalyzingAllowed
     }
 
 }
